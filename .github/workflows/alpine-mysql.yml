@@ -35,4 +35,4 @@ jobs:
 
       - name: Test MySQL Connection
         run: |
-          mysql -u testuser -p testpass -e "SHOW DATABASES;"
+          mysql -u root password 'root'
