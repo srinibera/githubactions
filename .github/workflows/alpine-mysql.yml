@@ -35,4 +35,4 @@ jobs:
 
       - name: Test MySQL Connection
         run: |
-          mysql -u root password 'root'
+          mysql -u root -proot
