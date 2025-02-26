@@ -1,6 +1,7 @@
 name: MySQL with Alpine Test
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 jobs:
   test-mysql:
