@@ -1,29 +1,53 @@
-name: Run with MySQL Container
+name: MySQL Connection Test
+
 on: 
   workflow_dispatch:
 
 jobs:
   test-mysql:
     runs-on: ubuntu-latest
+    
     services:
       mysql:
-        image: mysql:8.4.4
+        image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --host=localhost --user=root --password=root"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Run Query
+        uses: actions/checkout@v3
+
+      - name: Install MySQL Client
+        run: sudo apt-get install -y mysql-client
+
+      - name: Wait for MySQL to be Ready
         run: |
-          ping -c 4 127.0.0.1
-          mysql -h 127.0.0.1:3306 -uroot -e "SHOW DATABASES;"
-      
+          for i in {30..0}; do
+            if mysql -h 127.0.0.1 -u testuser -ptestpassword -e 'SELECT 1;' &> /dev/null; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
+      - name: Test MySQL Connection
+        run: |
+          mysql -h 127.0.0.1 -u testuser -ptestpassword -e "SHOW DATABASES;"
+
+      - name: Run Sample Query
+        run: |
+          mysql -h 127.0.0.1 -u testuser -ptestpassword -D testdb -e "
+          CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));
+          INSERT INTO users (name) VALUES ('Alice'), ('Bob');
+          SELECT * FROM users;"
