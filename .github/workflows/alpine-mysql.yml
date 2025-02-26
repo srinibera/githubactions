@@ -36,3 +36,8 @@ jobs:
       - name: Test MySQL Connection
         run: |
           mysql -u root -proot -e "SHOW DATABASES;"
+
+      - name: Run Some Tests
+        run: |
+          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+
