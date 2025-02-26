@@ -1,4 +1,4 @@
-name: MySQL on Alpine
+name: MySQL on Alpine Without Service
 
 on: [push, workflow_dispatch]
 
@@ -9,41 +9,30 @@ jobs:
     container:
       image: alpine:latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testdb
-          MYSQL_USER: testuser
-          MYSQL_PASSWORD: testpass
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
-      - name: Install MySQL Client
+      - name: Update and Install MySQL
         run: |
           apk update
-          apk add --no-cache mysql-client
-
-      - name: Wait for MySQL to be ready
+          apk add --no-cache mysql mysql-client mysql-server
+      
+      - name: Initialize MySQL Database
         run: |
-          for i in {1..10}; do
-            if mysql -h 127.0.0.1 -u testuser -ptestpass -e "SELECT 1" testdb; then
-              echo "MySQL is up!"
-              exit 0
-            fi
-            echo "Waiting for MySQL..."
-            sleep 5
-          done
-          echo "MySQL did not start in time."
-          exit 1
+          mkdir -p /run/mysqld
+          chown -R mysql:mysql /run/mysqld
+          mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
-      - name: Run MySQL Query
+      - name: Start MySQL Service
         run: |
-          mysql -h 127.0.0.1 -u testuser -ptestpass -e "SHOW DATABASES;" testdb
+          mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking=0 --socket=/run/mysqld/mysqld.sock & 
+          sleep 10 # Wait for MySQL to start
+
+      - name: Set Up MySQL User and Database
+        run: |
+          mysqladmin -u root password 'root'
+          mysql -u root -proot -e "CREATE DATABASE testdb;"
+          mysql -u root -proot -e "CREATE USER 'testuser'@'%' IDENTIFIED BY 'testpass';"
+          mysql -u root -proot -e "GRANT ALL PRIVILEGES ON testdb.* TO 'testuser'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL Connection
+        run: |
+          mysql -u testuser -ptestpass -e "SHOW DATABASES;" testdb
