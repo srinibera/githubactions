@@ -1,0 +1,51 @@
+name: MySQL with Alpine Test
+
+on: [push, pull_request]
+
+jobs:
+  test-mysql:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    container:
+      image: alpine:latest
+      options: --name alpine-container
+    steps:
+      - name: Install MySQL Client in Alpine Container
+        run: |
+          apk add --no-cache mysql-client
+
+      - name: Wait for MySQL to be Ready
+        run: |
+          for i in {30..0}; do
+            if mysql -h 172.17.0.1 -u testuser -ptestpassword -e 'SELECT 1;' &> /dev/null; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
+      - name: Test MySQL Connection from Alpine
+        run: |
+          mysql -h 172.17.0.1 -u testuser -ptestpassword -e "SHOW DATABASES;"
+
+      - name: Run Sample Query from Alpine
+        run: |
+          mysql -h 172.17.0.1 -u testuser -ptestpassword -D testdb -e "
+          CREATE TABLE users (id INT AUTO_INCREMENT PRIMAR
