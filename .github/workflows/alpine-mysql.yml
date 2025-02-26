@@ -1,0 +1,49 @@
+name: MySQL on Alpine
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test-mysql:
+    runs-on: ubuntu-latest
+
+    container:
+      image: alpine:latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Install MySQL Client
+        run: |
+          apk update
+          apk add --no-cache mysql-client
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..10}; do
+            if mysql -h 127.0.0.1 -u testuser -ptestpass -e "SELECT 1" testdb; then
+              echo "MySQL is up!"
+              exit 0
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+          echo "MySQL did not start in time."
+          exit 1
+
+      - name: Run MySQL Query
+        run: |
+          mysql -h 127.0.0.1 -u testuser -ptestpass -e "SHOW DATABASES;" testdb
