@@ -1,7 +1,8 @@
 name: MySQL with Ubuntu Test
 
-on: [push, pull_request]
-
+on:
+  workflow_dispatch:
+  
 jobs:
   test-mysql:
     runs-on: ubuntu-latest
