@@ -13,7 +13,7 @@ jobs:
       - name: Update and Install MySQL
         run: |
           apk update
-          apk add --no-cache mysql mysql-client mysql-server
+          apk add --no-cache mysql mysql-client
       
       - name: Initialize MySQL Database
         run: |
