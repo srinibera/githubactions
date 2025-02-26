@@ -25,6 +25,5 @@ jobs:
       - name: Run Query
         run: |
           ping -c 4 127.0.0.1
-          find / -type s
-          mysql  127.0.0.1:3306 -uroot -e "SHOW DATABASES;"
+          mysql -h 127.0.0.1:3306 -uroot -e "SHOW DATABASES;"
       
