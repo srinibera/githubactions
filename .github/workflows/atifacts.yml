@@ -1,9 +1,6 @@
 name: Upload and Download Artifacts
 
-on:
-  push:
-    branches:
-      - main
+on: [workflow_dispatch, push]
 
 jobs:
   upload-artifact:
